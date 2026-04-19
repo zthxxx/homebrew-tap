@@ -1,0 +1,10 @@
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Homebrew local build artifacts
+*.bottle.tar.gz
+*.bottle.json
