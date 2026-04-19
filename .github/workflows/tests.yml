@@ -1,0 +1,47 @@
+name: Tests
+
+# Runs on every PR and every push to main. Gates the auto-bump PRs opened
+# by zthxxx/hams's release workflow before a human clicks merge.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-14, ubuntu-latest]
+    steps:
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@master
+
+      - uses: actions/checkout@v4
+
+      - name: brew style
+        run: brew style Formula/hams.rb
+
+      - name: Tap self under the zthxxx/tap name
+        # brew audit / install resolve formulae by tap-qualified name
+        # (zthxxx/tap/hams), so the checkout needs to live at the path brew
+        # expects. Symlinking into the Taps directory is cheaper than
+        # re-cloning from git via `brew tap`.
+        run: |
+          tap_dir="$(brew --repository)/Library/Taps/zthxxx/homebrew-tap"
+          mkdir -p "$(dirname "$tap_dir")"
+          ln -sfn "$GITHUB_WORKSPACE" "$tap_dir"
+
+      - name: brew audit --strict
+        run: brew audit --strict zthxxx/tap/hams
+
+      - name: brew install
+        run: brew install --verbose zthxxx/tap/hams
+
+      - name: brew test
+        run: brew test zthxxx/tap/hams
